@@ -129,8 +129,157 @@ The program address will default to this keypair (override with --program-id):
 ![](images/withoutcheckerror.png)
 
 
-* Mint 和 Transfer的設定其實很像，[lib.rs](token-contract/programs/token-contract/src/lib.rs)中有詳細的註解，或也可以回到Josh大神的影片去看詳細的解釋喔！
+* Mint 和 Transfer的設定其實很像，[lib.rs](token-contract/programs/token-contract/src/lib.rs)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
 
 ### Part 2. Write tests to validate the program
-#### Steps
+* Initial : 在[package.json](token-contract/package.json)中加入我們要用到的solana套件`"@solana/spl-token":"^0.3.4"，記得加完之後要`npm install`喔！
+- Test will create fake wallets, tokens, and ATA for our wallet 
 
+#### Steps
+##### 1. 基本設定
+```rust
+  anchor.setProvider(anchor.AnchorProvider.env());
+  const program = anchor.workspace.TokenContract as Program<TokenContract>;
+  const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+  let associatedTokenAccount = undefined;
+```
+##### 2. 來寫mint tset
+- 每個it都代表一個test
+- 內容
+    1. 提取帳戶資訊
+    2. mint token
+    3. create mint account
+    4. create ATA account to hold the token
+    5. create transaction & send transaction
+    6. start testing
+```rust
+it("Mint a token", async () => {
+    // 1. 提取帳戶資訊
+    const key = anchor.AnchorProvider.env().wallet.publicKey;
+    const lamports: number = await program.provider.connection.getMinimumBalanceForRentExemption(
+      MINT_SIZE
+    );
+
+    associatedTokenAccount = await getAssociatedTokenAddress(
+      mintKey.publicKey,
+      key
+    );
+
+    // 2. mint token
+    const mint_tx = new anchor.web3.Transaction().add(
+      anchor.web3.SystemProgram.createAccount({
+        fromPubkey: key, 
+        newAccountPubkey: mintKey.publicKey, 
+        space: MINT_SIZE, 
+        programId: TOKEN_PROGRAM_ID, 
+        lamports,
+      }),
+      
+    // 3. create mint account
+      createInitializeMintInstruction(
+        mintKey.publicKey, 0, key, key
+      ),
+    
+    // 4. create ATA account to hold the token
+      createAssociatedTokenAccountInstruction(
+        key, associatedTokenAccount, key, mintKey.publicKey
+      )
+    );
+
+    // 5. create transaction & send transaction
+    const res = await anchor.AnchorProvider.env().sendAndConfirm(mint_tx, [mintKey]);
+
+    console.log(
+      await program.provider.connection.getParsedAccountInfo(mintKey.publicKey)
+    );
+
+    console.log("Account: ", res);
+    console.log("Mint key: ", mintKey.publicKey.toString());
+    console.log("User: ", key.toString());
+
+    // 6. start testing
+    // 調用token_contract(anchor build後會存在token-contract/target/types/token_contract.ts)
+    await program.methods.mintToken().accounts({
+      mint: mintKey.publicKey,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      to: associatedTokenAccount,
+      authority: key,
+    }).rpc();
+
+    const minted = (await program.provider.connection.getParsedAccountInfo(associatedTokenAccount)).value.data.parsed.info.tokenAmount.amount;
+    assert.equal(minted, 10);
+  });
+```
+##### 3. Test mint token `anchor test`
+![](images/testmintresult.png)
+
+```
+token-contract
+{
+  context: { apiVersion: '1.10.29', slot: 3 },
+  value: {
+    data: { parsed: [Object], program: 'spl-token', space: 82 },
+    executable: false,
+    lamports: 1461600,
+    owner: PublicKey {
+      _bn: <BN: 6ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a9>
+    },
+    rentEpoch: 0
+  }
+}
+Account:  P9rP3evV84RrzyeNLpjgnyiJBbjNQ89rwXKLWTdo9BoAWo7tvCmnQ24jF1BRbqvUQy9rVu99sbfHij82jNVnbne
+Mint key:  4uABYzQLARxMHfQWnMncG99DCoyiwvUx1WC9jgHMfH5b
+User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
+    ✔ Mint a token (874ms)
+
+
+  1 passing (876ms)
+
+✨  Done in 6.63s.
+```
+
+##### 4. 來寫transfer tset
+- 內容
+    1. 提取帳戶資訊
+    2. 
+    3. 
+    4. 
+    5. 
+    6. 
+```rust
+it("Transfer token", async () => {
+    // 1. 提取帳戶資訊
+    const myWallet = anchor.AnchorProvider.env().wallet.publicKey;
+    const toWallet: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+    const toATA = await getAssociatedTokenAddress(
+      mintKey.publicKey,
+      toWallet.publicKey
+    );
+
+    // Fires a list of instructions
+    const mint_tx = new anchor.web3.Transaction().add(
+      // Create the ATA account that is associated with our To wallet
+      createAssociatedTokenAccountInstruction(
+        myWallet, toATA, toWallet.publicKey, mintKey.publicKey
+      )
+    );
+
+    // Sends and create the transaction
+    await anchor.AnchorProvider.env().sendAndConfirm(mint_tx, []);
+
+    // Executes our transfer smart contract 
+    await program.methods.transferToken().accounts({
+      tokenProgram: TOKEN_PROGRAM_ID,
+      from: associatedTokenAccount,
+      authority: myWallet,
+      to: toATA,
+    }).rpc();
+
+    // Get minted token amount on the ATA for our anchor wallet
+    const minted = (await program.provider.connection.getParsedAccountInfo(associatedTokenAccount)).value.data.parsed.info.tokenAmount.amount;
+    assert.equal(minted, 5);
+  });
+```
+40:50
+
+[token-contract.ts](token-contract/tests/token-contract.ts)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
