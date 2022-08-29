@@ -17,8 +17,8 @@ A framework for quickly building secure Solana programs.
 8. [Rust docs about spl-token](https://docs.rs/spl-token/latest/spl_token/)
 
 ## Goals
-    * Write smart contract to mint and transfer tokens
-    * Write tests to validate the program
+- Write smart contract to mint and transfer tokens
+- Write tests to validate the program
 
 ### Create an anchor project
 - Initial 
