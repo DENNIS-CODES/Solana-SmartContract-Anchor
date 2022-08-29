@@ -238,14 +238,12 @@ User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
 ✨  Done in 6.63s.
 ```
 
-##### 4. 來寫transfer tset
+##### 4. 來寫transfer test
 - 內容
     1. 提取帳戶資訊
-    2. 
-    3. 
-    4. 
-    5. 
-    6. 
+    2. Sends and create the transaction
+    3. 執行 transfer smart contract 
+    4. testing 
 ```rust
 it("Transfer token", async () => {
     // 1. 提取帳戶資訊
@@ -264,10 +262,10 @@ it("Transfer token", async () => {
       )
     );
 
-    // Sends and create the transaction
+    // 2. Sends and create the transaction
     await anchor.AnchorProvider.env().sendAndConfirm(mint_tx, []);
 
-    // Executes our transfer smart contract 
+    // 3. 執行 transfer smart contract 
     await program.methods.transferToken().accounts({
       tokenProgram: TOKEN_PROGRAM_ID,
       from: associatedTokenAccount,
@@ -277,9 +275,44 @@ it("Transfer token", async () => {
 
     // Get minted token amount on the ATA for our anchor wallet
     const minted = (await program.provider.connection.getParsedAccountInfo(associatedTokenAccount)).value.data.parsed.info.tokenAmount.amount;
+    // 4. testing 
     assert.equal(minted, 5);
   });
 ```
-40:50
 
-[token-contract.ts](token-contract/tests/token-contract.ts)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
+##### 5. Test transfer `anchor test`
+
+![](images/testtransferresult.png)
+
+```
+ token-contract
+{
+  context: { apiVersion: '1.10.29', slot: 4 },
+  value: {
+    data: { parsed: [Object], program: 'spl-token', space: 82 },
+    executable: false,
+    lamports: 1461600,
+    owner: PublicKey {
+      _bn: <BN: 6ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a9>
+    },
+    rentEpoch: 0
+  }
+}
+Account:  55iXrL2P332kN9zPFog5kGNcHQwpNRGWfc88oK1SPeTMdF2FzXmoBowmqSTdcja9paZkZPzW9jEm6X4Mm1o1DYEQ
+Mint key:  Cy13es2jfGyawDvDgjzStnYoiCzd7x7NkV8EEJ9KfBDP
+User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
+    ✔ Mint a token (1073ms)
+    ✔ Transfer token (936ms)
+
+
+  2 passing (2s)
+
+✨  Done in 7.96s.
+```
+
+* [token-contract.ts](token-contract/tests/token-contract.ts)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
+
+### Conclusion & Warning from Josh
+!! This code is unsafe and only for learning pueposes only !!
+1. We don't do any validation or check to see if the user is who they say they are.
+2. We usually PDA (in future video) 
