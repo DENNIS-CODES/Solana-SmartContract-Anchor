@@ -40,6 +40,7 @@ anchor-spl = "0.24.2"
 
 ### Part 1. Write the smart contract
 #### Steps
+* Mint 和 Transfer的設定其實很像，[lib.rs](token-contract/programs/token-contract/src/lib.rs)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
 ##### 1. Writing Token mint transacion
 * Give a token, mint a token to a account
 * Mint Transaction Requirements
@@ -66,7 +67,7 @@ pub struct MintToken<'info> {
 pub fn mint_token(ctx: Context<MintToken>) -> Result<()> {
         let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(), 
-        to: ctx.accounts.to.to_account_info(),,
+        to: ctx.accounts.to.to_account_info(),
         authority: ctx.accounts.authority.to_account_info(),
         };
 
@@ -144,13 +145,14 @@ anchor會抱怨一些他覺得不安全的地方，像是
 加完`/// CHECK: blabla~~~~`再`anchort build`一次，他就沒有抱怨啦！
 ![](images/withoutcheckerror.png)
 
-* Mint 和 Transfer的設定其實很像，[lib.rs](token-contract/programs/token-contract/src/lib.rs)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
 
 ### Part 2. Write tests to validate the program
 * Initial : 在[package.json](token-contract/package.json)中加入我們要用到的solana套件`"@solana/spl-token":"^0.3.4"`，記得加完之後要`npm install`喔！
 - Test will create fake wallets, tokens, and ATA for our wallet 
 
 #### Steps
+* [token-contract.ts](token-contract/tests/token-contract.ts)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
+
 ##### 1. 基本設定
 1. 先import我們要用到的套件們
 ```ts
@@ -338,8 +340,6 @@ User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
 
 ✨  Done in 7.96s.
 ```
-
-* [token-contract.ts](token-contract/tests/token-contract.ts)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
 
 ### Conclusion & Warning from Josh
 ** This code is unsafe and only for learning pueposes only **

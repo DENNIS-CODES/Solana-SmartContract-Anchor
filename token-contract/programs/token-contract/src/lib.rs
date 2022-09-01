@@ -20,7 +20,7 @@ pub mod token_contract {
         authority: ctx.accounts.authority.to_account_info(),
         };
 
-        //get token_program account info
+        // get token_program account info
         let cpi_program = ctx.accounts.token_program.to_account_info();
         // Create the CpiContext we need for the request
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
