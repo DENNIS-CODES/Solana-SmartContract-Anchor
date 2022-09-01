@@ -133,10 +133,11 @@ The program address will default to this keypair (override with --program-id):
 
 * 注意！
 anchor會抱怨一些他覺得不安全的地方，像是
-`Struct field "mint" is unsafe, but is not documented.`
-`Struct field "authority" is unsafe, but is not documented.`
-`Struct field "to" is unsafe, but is not documented.`
-`Struct field "from" is unsafe, but is not documented.`
+  * Struct field "mint" is unsafe, but is not documented.
+  * Struct field "authority" is unsafe, but is not documented.
+  * Struct field "to" is unsafe, but is not documented.
+  * Struct field "from" is unsafe, but is not documented.  
+
 這些....所以我們要在這幾個參數前面加上anchor規定的`/// CHECK: blabla~~~~`他才不會抱怨喔！
 ![](images/checkerror.png)
 
