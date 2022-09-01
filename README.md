@@ -26,12 +26,16 @@ A framework for quickly building secure Solana programs.
     anchor init token-contract
     cd token-contract
 ```
-- Set Test
+- Set Test Tools
 ```
     yarn add ts-mocha 
     anchor test
 ```
 - 到Cargo.tomltoken-contract/programs/token-contract/Cargo.toml)修改套件版本和新增套件，不然會報錯
+```
+anchor-lang = "0.24.2"
+anchor-spl = "0.24.2"
+```
 ![](images/cargoset.png)
 
 ### Part 1. Write the smart contract
@@ -62,7 +66,7 @@ pub struct MintToken<'info> {
 pub fn mint_token(ctx: Context<MintToken>) -> Result<()> {
         let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(), 
-        to: ctx.accounts.token_account.to_account_info(),
+        to: ctx.accounts.to.to_account_info(),,
         authority: ctx.accounts.authority.to_account_info(),
         };
 
@@ -85,7 +89,7 @@ pub fn mint_token(ctx: Context<MintToken>) -> Result<()> {
 1. 參考[Rust Transfer](https://docs.rs/anchor-spl/latest/anchor_spl/token/struct.Transfer.html)文件在[lib.rs](token-contract/programs/token-contract/src/lib.rs)檔案中新增Transfer function需要調用的參數
 ```rust
 #[derive(Accounts)]
-pub struct Transfer<'info> {
+pub struct TransferToken<'info> {
     pub token_program: Program<'info, Token>,
     #[account(mut)]
     pub from: AccountInfo<'info>,
@@ -110,6 +114,12 @@ pub fn transfer_token(ctx: Context<TransferToken>) -> Result<()> {
     } 
 ```
 
+3. 記得要補上有用到的套件們
+```
+use anchor_spl::token;
+use anchor_spl::token::{Token, MintTo, Transfer};
+```
+
 ##### 3. `anchor build`
 成功會長這樣
 ![](images/anchorbuild.png)
@@ -122,27 +132,45 @@ The program address will default to this keypair (override with --program-id):
 ```
 
 * 注意！
-因為我們在Account前加了 `#[account(mut)]`讓Account是可以變動的，anchor不喜歡他會抱怨，所以我們要在每一個`#[account(mut)]`前面加上anchor規定的`/// CHECK: blabla~~~~`他才不會抱怨喔！
+anchor會抱怨一些他覺得不安全的地方，像是
+`Struct field "mint" is unsafe, but is not documented.`
+`Struct field "authority" is unsafe, but is not documented.`
+`Struct field "to" is unsafe, but is not documented.`
+`Struct field "from" is unsafe, but is not documented.`
+這些....所以我們要在這幾個參數前面加上anchor規定的`/// CHECK: blabla~~~~`他才不會抱怨喔！
 ![](images/checkerror.png)
 
 加完`/// CHECK: blabla~~~~`再`anchort build`一次，他就沒有抱怨啦！
 ![](images/withoutcheckerror.png)
 
-
 * Mint 和 Transfer的設定其實很像，[lib.rs](token-contract/programs/token-contract/src/lib.rs)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
 
 ### Part 2. Write tests to validate the program
-* Initial : 在[package.json](token-contract/package.json)中加入我們要用到的solana套件`"@solana/spl-token":"^0.3.4"，記得加完之後要`npm install`喔！
+* Initial : 在[package.json](token-contract/package.json)中加入我們要用到的solana套件`"@solana/spl-token":"^0.3.4"`，記得加完之後要`npm install`喔！
 - Test will create fake wallets, tokens, and ATA for our wallet 
 
 #### Steps
 ##### 1. 基本設定
-```rust
+1. 先import我們要用到的套件們
+```ts
+import {
+  TOKEN_PROGRAM_ID,
+  MINT_SIZE,
+  createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress,
+  createInitializeMintInstruction,
+} from "@solana/spl-token"; 
+import { assert } from "chai";
+```
+2. 帳戶相關資訊設定
+```ts
   anchor.setProvider(anchor.AnchorProvider.env());
   const program = anchor.workspace.TokenContract as Program<TokenContract>;
   const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   let associatedTokenAccount = undefined;
 ```
+
+
 ##### 2. 來寫mint tset
 - 每個it都代表一個test
 - 內容
@@ -152,7 +180,7 @@ The program address will default to this keypair (override with --program-id):
     4. create ATA account to hold the token
     5. create transaction & send transaction
     6. start testing
-```rust
+```ts
 it("Mint a token", async () => {
     // 1. 提取帳戶資訊
     const key = anchor.AnchorProvider.env().wallet.publicKey;
@@ -244,7 +272,7 @@ User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
     2. Sends and create the transaction
     3. 執行 transfer smart contract 
     4. testing 
-```rust
+```ts
 it("Transfer token", async () => {
     // 1. 提取帳戶資訊
     const myWallet = anchor.AnchorProvider.env().wallet.publicKey;
@@ -313,6 +341,6 @@ User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
 * [token-contract.ts](token-contract/tests/token-contract.ts)中有詳細的註解，也可以回到Josh大神的影片去看詳細的解釋喔！
 
 ### Conclusion & Warning from Josh
-!! This code is unsafe and only for learning pueposes only !!
+** This code is unsafe and only for learning pueposes only **
 1. We don't do any validation or check to see if the user is who they say they are.
 2. We usually PDA (in future video) 
