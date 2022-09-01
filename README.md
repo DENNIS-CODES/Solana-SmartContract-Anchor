@@ -344,4 +344,4 @@ User:  J12uQZZQL837hiUMcam1BZxHD6PwQXdX1PUdcSDrsg41
 ### Conclusion & Warning from Josh
 ** This code is unsafe and only for learning pueposes only **
 1. We don't do any validation or check to see if the user is who they say they are.
-2. We usually PDA (in future video) 
+2. We usually use PDA (in future video) 
